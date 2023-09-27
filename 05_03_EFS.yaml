@@ -1,0 +1,41 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: EFS File System
+
+Parameters:
+  Prefix:
+    Type: String
+
+Resources:
+  EFSFileSystem:
+    Type: AWS::EFS::FileSystem
+    Properties: 
+      BackupPolicy: 
+        Status: "ENABLED"
+      Encrypted: "true"
+      FileSystemTags: 
+        - Key: Name
+          Value: !Sub "${Prefix}-efs-filesystem"
+      PerformanceMode: generalPurpose
+
+  EFSMountTargetA:
+    Type: AWS::EFS::MountTarget
+    Properties: 
+      FileSystemId: !Ref EFSFileSystem
+      SecurityGroups: 
+        - !ImportValue SgEFSId
+      SubnetId: !ImportValue SubnetPrivate1AId
+
+  EFSMountTargetB:
+    Type: AWS::EFS::MountTarget
+    Properties: 
+      FileSystemId: !Ref EFSFileSystem
+      SecurityGroups: 
+        - !ImportValue SgEFSId
+      SubnetId: !ImportValue SubnetPrivate1CId
+
+Outputs:
+  EFSFileSystemId:
+    Value: !GetAtt EFSFileSystem.FileSystemId
+    Export:
+      Name: EFSFileSystemId

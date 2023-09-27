@@ -1,0 +1,53 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description:  Security Group for EC2/EFS
+
+Parameters:
+  AllowedIP:
+    Type: String
+
+Resources:
+  sgEC2:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !ImportValue VPCId
+      GroupDescription: Security group for EC2
+      GroupName: security group for EC2
+
+  EC2IngressSSH:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+        Description: Allow SSH access from Global
+        FromPort: 22
+        ToPort: 22
+        IpProtocol: tcp
+        CidrIp: !Ref AllowedIP
+        GroupId: !Ref sgEC2
+
+  sgEFS:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !ImportValue VPCId
+      GroupDescription: Security group for EFS
+      GroupName: security group for EFS
+
+  EFS2Ingress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+        Description: Allow NFS access from EC2
+        FromPort: 2049
+        ToPort: 2049
+        IpProtocol: tcp
+        SourceSecurityGroupId: !Ref sgEC2
+        GroupId: !Ref sgEFS
+
+Outputs:
+  SgEC2Id:
+    Value: !Ref sgEC2
+    Export:
+      Name: SgEC2Id
+
+  SgEFSId:
+    Value: !Ref sgEFS
+    Export:
+      Name: SgEFSId

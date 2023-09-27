@@ -1,0 +1,44 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: EC2
+
+Parameters:
+  Prefix:
+    Type: String
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+
+Resources:
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties: 
+      ImageId: ami-079cd5448deeace01 # Amazon Linux 2023
+      KeyName: !Ref KeyName
+      InstanceType: t2.micro
+      BlockDeviceMappings:
+        - Ebs:
+            VolumeSize: 8
+            VolumeType: gp3
+          DeviceName: /dev/xvda      
+      NetworkInterfaces: 
+        - AssociatePublicIpAddress: "true"
+          DeviceIndex: "0"
+          SubnetId: !ImportValue SubnetPublic1AId
+          GroupSet:
+            - !ImportValue SgEC2Id
+      UserData:
+        Fn::Base64: !Sub
+          - |
+            #!/bin/bash
+            sudo mkdir -p /mnt/efs
+            sudo echo "${file_system_id}.efs.${region}.amazonaws.com:/ /mnt/efs nfs4 nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport,_netdev 0 0"  >> /etc/fstab
+            sudo mount -a
+          - {
+              file_system_id: !ImportValue EFSFileSystemId,
+              region: !Ref AWS::Region
+            }
+      Tags:
+          - Key: Name
+            Value: !Sub "${Prefix}-server"
+          - Key: Backup
+            Value: "True"
